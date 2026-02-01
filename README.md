@@ -25,23 +25,14 @@ Originally part of **SabíSMP**, now a dedicated plugin.
 A legendary weapon with unique mechanics:
 *   **Singleton Existence**: Only **ONE** Mace can exist on the server at a time.
 *   **Custom Stats**: Configurable name, lore, and Custom Model Data.
-*   **Combat Effects**:
-    *   **Blindness**: Applies blindness to victims on hit.
-    *   **Ego Stabilization**: Special lore integration for RPG mechanics.
-
-### 🔒 Strict Mode
-Prevent the Mace from being hidden or lost:
-*   **No Storing**: Prevents placing the Mace in chests, barrels, shulkers, or ender chests.
-*   **No Dropping**: Configurable option to prevent players from dropping the item.
-*   **Inventory Locking**: Ensures the Mace stays in the player's inventory.
+*   **Strict Mode**:
+    *   **No Storing**
+    *   **No Dropping**
+    *   **Inventory Locking**
 
 ### 📜 Custom Recipe
 *   **Shape**: Vertical alignment by default (Heavy Core + Breeze Rods).
 *   **Fully Configurable**: Change ingredients and shape in `config.yml`.
-
-### 🌍 Localization
-*   **Multi-language Support**: Built-in support for English (`en`) and Vietnamese (`vi`).
-
 ---
 
 ## Installation
