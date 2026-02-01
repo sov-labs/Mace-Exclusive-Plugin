@@ -106,4 +106,4 @@ A legendary weapon with unique mechanics:
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
-Copyright © 2026 **NirussVn0** and **SOV Team**.
+Copyright © 2026 **NirussVn0** and **SOV Labs**.
