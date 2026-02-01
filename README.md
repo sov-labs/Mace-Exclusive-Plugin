@@ -1,17 +1,17 @@
-# ⚔️ SabiSMP
+# ⚔️ Mace-Exclusive
 
 <div align="center">
 
-![SabiSMP](https://img.shields.io/badge/SabiSMP-Plugin-E84C3D?style=for-the-badge&logo=minecraft&logoColor=white)
+![Mace-Exclusive](https://img.shields.io/badge/Mace--Exclusive-Plugin-E84C3D?style=for-the-badge&logo=minecraft&logoColor=white)
 [![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://jdk.java.net/21/)
 [![Spigot](https://img.shields.io/badge/Spigot-1.21+-F7CF0C?style=for-the-badge&logo=spigotmc&logoColor=white)](https://www.spigotmc.org/)
 [![Gradle](https://img.shields.io/badge/Gradle-8.1-02303A?style=for-the-badge&logo=gradle&logoColor=white)](https://gradle.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](./LICENSE)
 
-**Comprehensive SMP Utility Plugin** 🛠️
+**Standalone Powerful Mace Plugin** 🛠️
 
-Advanced features for modern SMPs: Ego/Tier progression, Custom Recipes, Vaults, and Combat Protections.
-Developed by **NirussVn0** and **SOV Team**.
+A unique singleton weapon mechanic with custom effects, strict inventory tracking, and fully configurable settings.
+Originally part of **SabíSMP**, now a dedicated plugin.
 
 [Features](#features) • [Installation](#installation) • [Commands](#commands) • [Permissions](#permissions) • [Building](#building-from-source)
 
@@ -21,31 +21,26 @@ Developed by **NirussVn0** and **SOV Team**.
 
 ## Features
 
-### 🔥 EgoSMP System
-A comprehensive progression and chaos system:
-* **Ego Items**: Dropped when killing players (with cooldown). Bound to victim.
-* **Ego State**: Consume an Ego item to enter a chaos state with debuffs and inventory shuffling.
-* **Tier Progression**: Survive the Ego State to "Awaken" and increase your Tier.
-* **Bonuses**: Higher tiers grant permanent Health and Damage bonuses.
-* **Curses**: High-tier players emit glowing effects and particles.
-* **Soul Keeper**: A rare item that prevents Tier loss upon death.
-* **Universal Ego**: An unbound Ego item usable by anyone.
-* **Ego Item Protection** *(v0.1.2)*: Ego/Soul Keeper items cannot be dropped and are kept on death (disabled after tier-up).
-* **Dark Ego** *(v0.1.2)*: High-tier players (Tier 5+) have 50% chance to drop a "Darkened Ego" on death. Grants +2-3 Tiers but applies Wither II and debuffs.
-* **End Region Protection** *(v0.1.3)*: Instantly kills players below Tier 9 who enter the Dragon Fight area in The End.
-* **Combat Protection**: PvP disabled in spawn and for a short duration after death.
+### 🔨 The Mace of Power
+A legendary weapon with unique mechanics:
+*   **Singleton Existence**: Only **ONE** Mace can exist on the server at a time.
+*   **Custom Stats**: Configurable name, lore, and Custom Model Data.
+*   **Combat Effects**:
+    *   **Blindness**: Applies blindness to victims on hit.
+    *   **Ego Stabilization**: Special lore integration for RPG mechanics.
 
-### 🎒 Player Vaults
-- Personal storage accessible via `/sabi vault`
+### 🔒 Strict Mode
+Prevent the Mace from being hidden or lost:
+*   **No Storing**: Prevents placing the Mace in chests, barrels, shulkers, or ender chests.
+*   **No Dropping**: Configurable option to prevent players from dropping the item.
+*   **Inventory Locking**: Ensures the Mace stays in the player's inventory.
 
-### 📜 Custom Recipes
-- Define custom recipes in `recipes.yml`
-- **Craft Limits**: Set per-player or global crafting limits for powerful items
+### 📜 Custom Recipe
+*   **Shape**: Vertical alignment by default (Heavy Core + Breeze Rods).
+*   **Fully Configurable**: Change ingredients and shape in `config.yml`.
 
-### 🚫 Blocked Items
-- Prevent usage of specific blocks/items
-- Configure easily in `blocked.yml`
-
+### 🌍 Localization
+*   **Multi-language Support**: Built-in support for English (`en`) and Vietnamese (`vi`).
 
 ---
 
@@ -54,11 +49,10 @@ A comprehensive progression and chaos system:
 1.  **Download**: Get the latest JAR from [Releases](../../releases).
 2.  **Install**: Drop the file into your server's `plugins/` folder.
 3.  **Restart**: Start your server to generate config files.
-4.  **Configure**: Edit files in `plugins/SabiSMP/`:
-    *   `config.yml`: Feature toggles (Ego, Combat, etc.)
+4.  **Configure**: Edit files in `plugins/Mace-Exclusive/`:
+    *   `config.yml`: Feature toggles (Strict mode, Recipe, Item stats)
     *   `lang_en.yml` / `lang_vi.yml`: Localization
-    *   `recipes.yml` & `blocked.yml`: Item management
-5.  **Reload**: Use `/sabi recipe reload` or restart.
+5.  **Reload**: Use `/macee reload` to apply changes.
 
 ---
 
@@ -66,20 +60,11 @@ A comprehensive progression and chaos system:
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/sabi ego` | View your Ego/Tier status | None |
-| `/sabi ego <player>` | View another player's status | `sabismp.admin` |
-| `/sabi ego set <player> <tier>` | Set a player's tier | `sabismp.admin` |
-| `/sabi ego reset <player>` | Reset a player's tier | `sabismp.admin` |
-| `/sabi lang all <lang>` | Set global default language | `sabismp.admin` |
-| `/sabi reload` | Reload configuration | `sabismp.admin` |
-| `/sabi items` | Open admin item manager | `sabismp.admin` |
-| `/sabi items ego [player]` | Give Universal Ego Item | `sabismp.admin` |
-| `/sabi items soul-keeper [player]` | Give Soul Keeper Item | `sabismp.admin` |
-| `/sabi help` | Show help menu | None |
-| `/sabi vault` | Open your vault | `sabi.vault.use` |
-| `/sabi recipe ui` | Open recipe editor GUI | `sabi.recipe.admin` |
-| `/sabi block <material>` | Block a material | `sabi.block.admin` |
-
+| `/macee help` | Show help menu | `mace.use` |
+| `/macee info` | View current Mace holder & location | `mace.use` |
+| `/macee give <player>` | **Admin**: Force give the Mace to a player | `mace.admin` |
+| `/macee reset` | **Admin**: Reset Mace status (allows crafting again) | `mace.admin` |
+| `/macee reload` | **Admin**: Reload configuration | `mace.admin` |
 
 ---
 
@@ -87,10 +72,8 @@ A comprehensive progression and chaos system:
 
 | Permission | Default | Description |
 |------------|---------|-------------|
-| `sabi.admin` | op | Full admin access |
-| `sabi.vault.use` | true | Use personal vault |
-| `sabi.recipe.admin` | op | Manage recipes and limits |
-| `sabi.block.admin` | op | Manage blocked items |
+| `mace.use` | true | Access to basic info/help commands |
+| `mace.admin` | op | Full access to admin commands & bypasses |
 
 ---
 
@@ -104,8 +87,8 @@ A comprehensive progression and chaos system:
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/NirussVn0/SabiSMP-Plugin.git
-    cd SabiSMP-Plugin
+    git clone https://github.com/sov-labs/Mace-Exclusive-Plugin.git
+    cd Mace-Exclusive-Plugin
     ```
 
 2.  **Build with Gradle:**
@@ -122,9 +105,9 @@ A comprehensive progression and chaos system:
 
 3.  **Locate the Artifact:**
     The compiled JAR file will be located at:
-    `build/libs/SabiSMP-0.1.0.jar`
+    `build/libs/Mace-Exclusive-1.0.0.jar`
 
-> **Note**: We skip tests (`-x test`) during build because some tests require a specific environment setup. Use `./gradlew test` if you want to run the test suite.
+> **Note**: We skip tests (`-x test`) during build usually, but you can run them with `./gradlew test`.
 
 ---
 
