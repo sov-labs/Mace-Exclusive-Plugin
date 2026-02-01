@@ -1,0 +1,97 @@
+package vn.nirussv.maceexclusive.config;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import vn.nirussv.maceexclusive.MaceExclusivePlugin;
+
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+
+public class ConfigManager {
+
+    private final MaceExclusivePlugin plugin;
+    private FileConfiguration langConfig;
+    private final Map<String, String> messageCache = new HashMap<>();
+
+    public ConfigManager(MaceExclusivePlugin plugin) {
+        this.plugin = plugin;
+    }
+
+    public void reload() {
+        plugin.reloadConfig();
+        loadLanguage();
+    }
+
+    private void loadLanguage() {
+        String langCode = plugin.getConfig().getString("settings.language", "en");
+        String fileName = "lang_" + langCode + ".yml";
+        File langFile = new File(plugin.getDataFolder(), fileName);
+
+        if (!langFile.exists()) {
+            plugin.saveResource(fileName, false);
+        }
+
+        langConfig = YamlConfiguration.loadConfiguration(langFile);
+        
+        // Load default defaults/check for updates (simplified)
+        InputStream defStream = plugin.getResource(fileName);
+        if (defStream != null) {
+            langConfig.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(defStream, StandardCharsets.UTF_8)));
+        }
+        
+        messageCache.clear();
+    }
+
+    public String getRawMessage(String key) {
+        if (langConfig == null) loadLanguage();
+        return langConfig.getString(key, "Missing key: " + key);
+    }
+
+    public Component getMessage(String key) {
+        return toComponent(getRawMessage(key));
+    }
+
+    public Component getMessage(String key, Map<String, String> placeholders) {
+        String msg = getRawMessage(key);
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            msg = msg.replace("%" + entry.getKey() + "%", entry.getValue());
+        }
+        return toComponent(msg);
+    }
+
+    public Component getPrefixedMessage(String key) {
+        String prefix = getRawMessage("prefix");
+        return toComponent(prefix + getRawMessage(key));
+    }
+    
+    public Component getPrefixedMessage(String key, Map<String, String> placeholders) {
+        String prefix = getRawMessage("prefix");
+        String msg = getRawMessage(key);
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            msg = msg.replace("%" + entry.getKey() + "%", entry.getValue());
+        }
+        return toComponent(prefix + msg);
+    }
+
+    private Component toComponent(String legacyText) {
+        // Support both & and MiniMessage ideally, but sticking to legacy & as per user prompt example
+        return LegacyComponentSerializer.legacyAmpersand().deserialize(legacyText);
+    }
+    
+    // Config Getters
+    public boolean isDropAllowed() {
+        return plugin.getConfig().getBoolean("settings.allow-drop", true);
+    }
+    
+    public boolean isStrictMode() {
+        return plugin.getConfig().getBoolean("settings.strict-mode", false);
+    }
+}
