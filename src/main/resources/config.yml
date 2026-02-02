@@ -8,6 +8,26 @@ settings:
   # Player CAN still use Anvil and Enchanting Table.
   strict-mode: false
 
+effects:
+  # Effects when crafting the Mace for the first time
+  first-craft:
+    glowing: true
+    duration: 300 # seconds
+
+  # Passive effects when holding the Mace
+  holding:
+    glowing: false # Default false
+    soul-particles: false # Default false
+
+  # Active effects during combat/usage
+  combat:
+    # Custom message when killing a player with the Mace
+    custom-kill-message: true
+    # Ground slam effect (falling blocks) - WARNING: Can cause lag
+    ground-slam:
+      enabled: false
+      radius: 3
+
 mace:
   name: "&b&lMACE OF POWER"
   material: MACE

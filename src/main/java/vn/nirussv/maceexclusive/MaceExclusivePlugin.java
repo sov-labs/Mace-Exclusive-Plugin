@@ -40,6 +40,10 @@ public class MaceExclusivePlugin extends JavaPlugin {
         
         // Register Listener
         getServer().getPluginManager().registerEvents(new MaceListener(this, maceManager, configManager), this);
+        getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.EffectMaceListener(this, maceManager, configManager), this);
+        
+        // Start Effect Task (Passive Effects)
+        new vn.nirussv.maceexclusive.task.MaceEffectTask(this, maceManager).runTaskTimer(this, 10L, 5L);
         
         // Register Recipe
         registerRecipe();
