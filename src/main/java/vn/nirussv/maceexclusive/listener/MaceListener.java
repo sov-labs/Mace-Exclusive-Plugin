@@ -47,10 +47,6 @@ public class MaceListener implements Listener {
         ItemStack weapon = attacker.getInventory().getItemInMainHand();
         
         if (maceManager.isRegisteredMace(weapon)) {
-            // Apply Blindness check (removed Tier 5 check, replaced with simple logic or permission)
-            // User requested "same mechanism", implying the power.
-            // We'll apply it always for the exclusive mace or check permission
-            
             victim.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0)); // 3s
             attacker.playSound(attacker.getLocation(), Sound.ENTITY_WARDEN_ATTACK_IMPACT, 1f, 1f);
         }
@@ -66,7 +62,6 @@ public class MaceListener implements Listener {
         
         if (item == null || item.getType() != Material.MACE) return;
         
-        // If it's a mace but not registered, and none registered..
         if (!maceManager.isRegisteredMace(item)) {
             if (maceManager.registerMace(item, player.getUniqueId())) {
                 maceManager.onPlayerBecameHolder(player, player.getLocation());
@@ -80,16 +75,8 @@ public class MaceListener implements Listener {
         if (event.getRecipe() == null) return;
         ItemStack result = event.getInventory().getResult();
         
-        // This checks if the OUTPUT is a MACE.
-        // We assume only our recipe produces this specific mace? 
-        // Or if it's vanilla mace blocking?
-        // Prompt says "tách tính năng only mace". Usually this implies preventing ANY mace if it's meant to be unique,
-        // OR preventing OUR mace recipe.
-        // Assuming we block our mace recipe result if one exists.
-        
         if (result == null || result.getType() != Material.MACE) return;
-
-        // If a mace is already registered, block crafting
+        
         if (!maceManager.canCraftMace()) {
             event.getInventory().setResult(null);
         }
@@ -113,11 +100,7 @@ public class MaceListener implements Listener {
 
         // Handle first craft registration
         if (event.getWhoClicked() instanceof Player player) {
-            // Logic to register the mace
-            // We use runTaskLater to catch the item in inventory
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                // Simplified search for the new mace
-                // Try cursor or inventory
                 ItemStack cursor = player.getItemOnCursor();
                 if (cursor != null && cursor.getType() == Material.MACE && !maceManager.isRegisteredMace(cursor)) {
                      if (maceManager.registerMace(cursor, player.getUniqueId())) {

@@ -51,7 +51,6 @@ public class MaceManager {
         return !repository.isMaceRegistered();
     }
 
-    // Register an existing item as THE mace
     public boolean registerMace(ItemStack item, UUID owner) {
         if (item == null || item.getType() != Material.MACE) return false;
         if (repository.isMaceRegistered()) return false;

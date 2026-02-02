@@ -82,11 +82,9 @@ public class ConfigManager {
     }
 
     private Component toComponent(String legacyText) {
-        // Support both & and MiniMessage ideally, but sticking to legacy & as per user prompt example
         return LegacyComponentSerializer.legacyAmpersand().deserialize(legacyText);
     }
     
-    // Config Getters
     public boolean isDropAllowed() {
         return plugin.getConfig().getBoolean("settings.allow-drop", true);
     }

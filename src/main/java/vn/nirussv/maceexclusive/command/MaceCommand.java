@@ -70,7 +70,6 @@ public class MaceCommand implements CommandExecutor, TabCompleter {
     }
 
     private void handleGive(Player player) {
-        // Force give mace
         if (maceManager.canCraftMace()) {
             ItemStack mace = maceFactory.createMace();
             maceManager.registerMace(mace, player.getUniqueId());

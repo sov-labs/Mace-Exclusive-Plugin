@@ -13,7 +13,7 @@
 A unique singleton weapon mechanic with custom effects, strict inventory tracking, and fully configurable settings.
 Originally part of **SabíSMP**, now a dedicated plugin.
 
-[Features](#features) • [Installation](#installation) • [Commands](#commands) • [Permissions](#permissions) • [Building](#building-from-source)
+[Features](#features) • [Installation](#installation) • [Commands](#commands) • [Permissions](#permissions) • [Building](#building-from-source) • [Support](#support)
 
 </div>
 
@@ -21,23 +21,24 @@ Originally part of **SabíSMP**, now a dedicated plugin.
 
 ## Features
 
-### 🔨 The Mace of Power
+### 🔨 Limits the Power of the MACE
 A legendary weapon with unique mechanics:
-*   **Singleton Existence**: Only **ONE** Mace can exist on the server at a time.
-*   **Custom Stats**: Configurable name, lore, and Custom Model Data.
-*   **Strict Mode**:
-    *   **No Storing**
-    *   **No Dropping**
-    *   **Inventory Locking**
+*   **Singleton Existence**: Only **ONE** Mace can exist on the server at a time
+*   **Efffect Mace**:  When you first own a Mace, you are the most wanted player on the server
+*   **Strict Mode** (can be changed in config.yml):
+    *   **No Storing**: You cannot store the Mace in your inventory
+    *   **No Dropping**: You cannot drop the Mace
+    *   **Inventory Locking**: You cannot use the inventory while holding the Mace
 
-### 📜 Custom Recipe
+### 📜 Custom Recipe of the Mace
+*   **Custom Stats**: Configurable name, lore, and Custom Model Data.
 *   **Shape**: Vertical alignment by default (Heavy Core + Breeze Rods).
 *   **Fully Configurable**: Change ingredients and shape in `config.yml`.
 ---
 
 ## Installation
 
-1.  **Download**: Get the latest JAR from [Releases](../../releases).
+1.  **Download**: Get the latest JAR from [Nodrinth here](https://nodrinth.com/plugin/mace-exclusive).
 2.  **Install**: Drop the file into your server's `plugins/` folder.
 3.  **Restart**: Start your server to generate config files.
 4.  **Configure**: Edit files in `plugins/Mace-Exclusive/`:
@@ -107,3 +108,11 @@ A legendary weapon with unique mechanics:
 Distributed under the MIT License. See `LICENSE` for more information.
 
 Copyright © 2026 **NirussVn0** and **SOV Labs**.
+
+---
+
+## Support
+
+If you find any issues or have suggestions, please open an issue on [GitHub](https://github.com/sov-labs/Mace-Exclusive-Plugin/issues).
+
+donate: [paypal](https://www.paypal.com/paypalme/nirussvn0)

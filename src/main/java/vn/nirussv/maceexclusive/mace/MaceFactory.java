@@ -51,9 +51,7 @@ public class MaceFactory {
             if (section.contains("custom-model-data")) {
                 meta.setCustomModelData(section.getInt("custom-model-data"));
             }
-            
-            // Mark it as THE mace just in case, though the logic is usually external (PDC)
-            // But having a base tag helps identification even if not registered
+
             NamespacedKey key = new NamespacedKey(plugin, MACE_KEY_STRING);
             meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
 
