@@ -18,3 +18,7 @@
     - **Self-Curse**: Wither & Inventory Shuffle on craft/pickup.
     - **Combat**: 20% chance to shuffle victim inventory.
     - Glitch Kill Message.
+
+### Fixed
+- Fixed **Custom Recipe** conflicting with Vanilla recipe (Vanilla recipe key removed).
+- Fixed **Shift-Click Mass Crafting** exploit (Shift-click crafting disabled for Mace).
