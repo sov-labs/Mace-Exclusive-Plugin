@@ -3,8 +3,9 @@ settings:
   language: en
   # Can the mace be dropped by the player?
   allow-drop: true
-  # Tracking mode: simplified (true) or strict (false)
-  # Strict mode prevents moving to other inventories etc. if implemented similar to original
+  # Tracking mode: Strict Mode
+  # If true: Player CANNOT drop the Mace or put it in any container (Chest, etc.).
+  # Player CAN still use Anvil and Enchanting Table.
   strict-mode: false
 
 mace:
