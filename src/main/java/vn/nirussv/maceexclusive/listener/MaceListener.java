@@ -138,7 +138,9 @@ public class MaceListener implements Listener {
         ItemStack item = event.getItemDrop().getItemStack();
         
         if (maceManager.isRegisteredMace(item)) {
-            if (!configManager.isDropAllowed()) {
+            // "nếu tắt thì thôi" -> If strict mode is OFF, check allow-drop config.
+            // If strict mode is ON, ALWAYS block drop.
+            if (configManager.isStrictMode() || !configManager.isDropAllowed()) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(configManager.getPrefixedMessage("mace.cannot-drop"));
             }
@@ -155,12 +157,28 @@ public class MaceListener implements Listener {
          ItemStack cursor = event.getCursor();
          
          boolean hasMace = maceManager.isRegisteredMace(current) || maceManager.isRegisteredMace(cursor);
+         
+         // Hotkey swap check (1-9)
+         if (event.getClick().isKeyboardClick()) {
+             ItemStack active = player.getInventory().getItem(event.getHotbarButton());
+             if (maceManager.isRegisteredMace(active)) hasMace = true;
+         }
+         
          if (!hasMace) return;
 
          InventoryType top = event.getView().getTopInventory().getType();
-         if (top != InventoryType.CRAFTING && event.getClickedInventory() != event.getView().getBottomInventory()) {
-             event.setCancelled(true);
-             player.sendMessage(configManager.getPrefixedMessage("mace.cannot-move"));
+         
+         // Allowed types: CRAFTING (default), ANVIL, ENCHANTING, WORKBENCH
+         boolean isAllowed = top == InventoryType.CRAFTING 
+                 || top == InventoryType.ANVIL 
+                 || top == InventoryType.ENCHANTING;
+                 
+         if (!isAllowed) {
+             // If interacting with top inventory OR moving from bottom to top (shift-click)
+             if (event.getClickedInventory() == event.getView().getTopInventory() || event.isShiftClick()) {
+                 event.setCancelled(true);
+                 player.sendMessage(configManager.getPrefixedMessage("mace.cannot-move"));
+             }
          }
     }
 }
