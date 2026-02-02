@@ -27,20 +27,6 @@ public class MaceFactory {
     }
     
     public ItemStack createChaosMace() {
-        String chaosKey = "mace_chaos_item"; // Different persistent key or verify by functionality
-        // But for simplicity request just says "chaos mace", let's use a key if needed or model data.
-        // ChaosMaceListener checks model data primarily.
-        // BUT, strict mode might block it if we don't register it in MaceManager? 
-        // We really should treat it as a "Mace" so strict mode applies too?
-        // Request: "cả 2 cây mace đều thêm tính năng có thể tắt nhưng mặc định thông báo là có" -> "Both maces".
-        // If strict mode prevents drop, does it apply to chaos mace?
-        // "fix tính năng Strict mace" ... "với không chặn người chơi..."
-        // Use separate key for Chaos Mace to identify it uniquely for chaos effects, 
-        // but if MaceManager checks "isRegisteredMace", we might want it to return true for both?
-        // MaceManager.isRegisteredMace checks MACE_KEY_STRING.
-        // If we want Strict Mode to apply to Chaos Mace (likely yes, it's a mace), we should probably tag it with the same key OR MaceManager should check both.
-        // For safety, let's tag it with MACE_KEY_STRING too, or rely on model data.
-        // Adding a second key for chaos ID.
         return createMaceFromConfig("mace-chaos", "mace_chaos_item");
     }
 
@@ -74,18 +60,8 @@ public class MaceFactory {
                 meta.setCustomModelData(section.getInt("custom-model-data"));
             }
 
-            // Tag as Mace for general purposes (if we want strict mode to apply)
-            // But if we use different keys, we need to update MaceManager.
-            // Let's use the specific key provided. 
-            // NOTE: If keyString is different from MACE_KEY_STRING, MaceManager.isRegisteredMace will return false.
-            // Strict Mode relies on MaceManager.isRegisteredMace.
-            // If we want Strict Mode on Chaos Mace, we should add MACE_KEY_STRING too.
-            
             NamespacedKey key = new NamespacedKey(plugin, keyString);
             meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
-            
-            // Also tag as "Basic Mace" if we want Strict Mode checks?
-            // Actually, let's update MaceManager to check effectively.
             
             item.setItemMeta(meta);
         }

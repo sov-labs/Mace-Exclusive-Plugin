@@ -27,27 +27,21 @@ public class MaceExclusivePlugin extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         
-        // Initialize Core Components
         this.configManager = new ConfigManager(this);
         this.maceFactory = new MaceFactory(this);
         this.maceRepository = new MaceRepository(this);
         this.maceManager = new MaceManager(this, maceRepository, configManager, maceFactory);
         
-        // Register Command
         MaceCommand cmd = new MaceCommand(this, maceManager, configManager, maceFactory);
         getCommand("macee").setExecutor(cmd);
         getCommand("macee").setTabCompleter(cmd);
         
-        // Register Listener
-        // Register Listener
         getServer().getPluginManager().registerEvents(new MaceListener(this, maceManager, configManager), this);
         getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.EffectMaceListener(this, maceManager, configManager), this);
         getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.ChaosMaceListener(this, maceManager, configManager), this);
         
-        // Start Effect Task (Passive Effects)
         new vn.nirussv.maceexclusive.task.MaceEffectTask(this, maceManager).runTaskTimer(this, 10L, 5L);
         
-        // Register Recipe
         registerRecipe();
         
         getLogger().info("Mace-Exclusive has been enabled! Version: " + getDescription().getVersion());
@@ -93,7 +87,6 @@ public class MaceExclusivePlugin extends JavaPlugin {
 
         getServer().addRecipe(recipe);
         
-        // Register Chaos Recipe
         if (getConfig().getBoolean("mace-chaos.enabled", true)) {
              registerChaosRecipe();
         }

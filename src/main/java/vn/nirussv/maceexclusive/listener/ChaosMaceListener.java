@@ -37,8 +37,6 @@ public class ChaosMaceListener implements Listener {
         this.configManager = configManager;
     }
 
-    // IdentifyChaosMace logic could be in MaceManager, but for now we check lore/model or a specific PersistentData if we added it.
-    // For simplicity, we'll check if it's a mace and has specific model data/lore from config.
     private boolean isChaosMace(ItemStack item) {
         if (item == null || item.getType() != Material.MACE) return false;
         if (!item.hasItemMeta()) return false;
@@ -50,7 +48,6 @@ public class ChaosMaceListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPrepareCraft(PrepareItemCraftEvent event) {
-        // Validation handled by custom recipe registration, but double check if needed
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -70,11 +67,6 @@ public class ChaosMaceListener implements Listener {
         ItemStack item = event.getItem().getItemStack();
         
         if (isChaosMace(item)) {
-            // Check if player already "owns" it or just verify it's a chaos mace pickup event
-            // The requirement says "cũng áp dụng nếu có player nào đó lụm mace này" (also apply if someone picks it up)
-            // To avoid spamming effects every time they drop/pickup, we might want a cooldown, but request implies "when picked up".
-            // We'll apply it.
-            // Check if player has cooldown tag? For now, just apply.
             applySelfCurse(player);
             announceChaos(player, "found");
         }
@@ -87,7 +79,6 @@ public class ChaosMaceListener implements Listener {
 
         ItemStack weapon = attacker.getInventory().getItemInMainHand();
         if (isChaosMace(weapon)) {
-            // 20% Shuffle
             if (random.nextDouble() < plugin.getConfig().getDouble("mace-chaos.effects.shuffle-inventory.chance", 0.2)) {
                 int duration = plugin.getConfig().getInt("mace-chaos.effects.shuffle-inventory.duration", 5);
                 int interval = plugin.getConfig().getInt("mace-chaos.effects.shuffle-inventory.interval", 5);
@@ -109,8 +100,6 @@ public class ChaosMaceListener implements Listener {
                 if (plugin.getConfig().getBoolean("mace-chaos.effects.glitch-kill-name", true)) {
                     Component originalMsg = event.deathMessage();
                     if (originalMsg != null) {
-                         // Simple replace string logic or rebuild component
-                         // Rebuilding: Victim was slain by @#%@#%
                          event.deathMessage(
                                  Component.text(victim.getName(), NamedTextColor.RED)
                                  .append(Component.text(" was OBLITERATED by ", NamedTextColor.GRAY))
@@ -138,8 +127,6 @@ public class ChaosMaceListener implements Listener {
         if (!plugin.getConfig().getBoolean("mace-chaos.effects.announce-on-chat", true)) return;
         
         String msgKey = action.equals("crafted") ? "mace.chaos-crafted" : "mace.chaos-found";
-        // Since we don't have these keys in lang file yet, we use hardcoded strictly or fallback
-        // Better to use broadcast
         
         Component msg = Component.text("Warning: ", NamedTextColor.RED)
                 .append(Component.text(player.getName(), NamedTextColor.YELLOW))
@@ -150,7 +137,7 @@ public class ChaosMaceListener implements Listener {
         Bukkit.broadcast(msg);
         
         if (plugin.getConfig().getBoolean("mace-chaos.effects.glowing", true)) {
-             player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 600, 0)); // 30s glow
+             player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 600, 0));
         }
     }
 }

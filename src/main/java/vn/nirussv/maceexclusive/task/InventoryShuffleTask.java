@@ -48,7 +48,6 @@ public class InventoryShuffleTask extends BukkitRunnable {
     private void shuffleInventory(Player p) {
         PlayerInventory inv = p.getInventory();
         
-        // Shuffle main contents (0-35)
         List<ItemStack> contents = new ArrayList<>();
         for (int i = 0; i < 36; i++) {
             ItemStack item = inv.getItem(i);

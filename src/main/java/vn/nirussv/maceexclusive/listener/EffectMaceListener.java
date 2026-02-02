@@ -44,7 +44,6 @@ public class EffectMaceListener implements Listener {
         if (result.getType() != Material.MACE) return;
 
         // Ensure it is our Mace (should be restricted by MaceFactory/Manager logic already, but safe check)
-        // Also check if this craft event is ACTUALLY successful (not cancelled)
         if (event.isCancelled()) return;
 
         if (event.getWhoClicked() instanceof Player player) {
@@ -59,7 +58,6 @@ public class EffectMaceListener implements Listener {
         ItemStack weapon = attacker.getInventory().getItemInMainHand();
 
         if (maceManager.isRegisteredMace(weapon)) {
-            // Ground Slam Effect
             if (plugin.getConfig().getBoolean("effects.combat.ground-slam.enabled", false)) {
                 performGroundSlam(attacker, event.getEntity().getLocation());
             }
@@ -97,15 +95,9 @@ public class EffectMaceListener implements Listener {
         }
 
         for (Block block : blocks) {
-             // Create falling block visual
              FallingBlock fb = block.getWorld().spawnFallingBlock(block.getLocation().add(0, 1, 0), block.getBlockData());
              fb.setVelocity(new Vector(0, 0.4, 0));
              fb.setDropItem(false);
-             // Note: Real ground slam logic often involves temporarily removing the block or using packets. 
-             // Spawning falling block on top is a safer "visual" effect without destroying the map permanently 
-             // if we don't setBlock(AIR).
-             // However, just spawning falling blocks on top of existing blocks looks weird. 
-             // To be safe and "visual only" as requested (implied by lag warning), we just spawn debris.
         }
         attacker.playSound(targetLoc, Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.5f);
     }

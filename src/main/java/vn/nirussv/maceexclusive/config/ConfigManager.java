@@ -41,7 +41,8 @@ public class ConfigManager {
 
         langConfig = YamlConfiguration.loadConfiguration(langFile);
         
-        // Load default defaults/check for updates (simplified)
+        langConfig = YamlConfiguration.loadConfiguration(langFile);
+        
         InputStream defStream = plugin.getResource(fileName);
         if (defStream != null) {
             langConfig.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(defStream, StandardCharsets.UTF_8)));

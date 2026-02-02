@@ -11,20 +11,20 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import vn.nirussv.maceexclusive.MaceExclusivePlugin;
 import vn.nirussv.maceexclusive.config.ConfigManager;
 import vn.nirussv.maceexclusive.mace.MaceManager;
+
+import java.util.Map;
 
 public class MaceListener implements Listener {
 
@@ -38,7 +38,6 @@ public class MaceListener implements Listener {
         this.configManager = configManager;
     }
 
-    // Combat Logic
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player attacker)) return;
@@ -47,12 +46,11 @@ public class MaceListener implements Listener {
         ItemStack weapon = attacker.getInventory().getItemInMainHand();
         
         if (maceManager.isRegisteredMace(weapon)) {
-            victim.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0)); // 3s
+            victim.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0));
             attacker.playSound(attacker.getLocation(), Sound.ENTITY_WARDEN_ATTACK_IMPACT, 1f, 1f);
         }
     }
 
-    // Register on Right Click if somehow obtained unregistered
     @EventHandler
     public void onMaceInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
@@ -69,7 +67,6 @@ public class MaceListener implements Listener {
         }
     }
 
-    // Crafting Check - Prevent outcome if mace exists
     @EventHandler(priority = EventPriority.HIGH)
     public void onPrepareCraft(PrepareItemCraftEvent event) {
         if (event.getRecipe() == null) return;
@@ -82,23 +79,20 @@ public class MaceListener implements Listener {
         }
     }
 
-    // Handle Crafting
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onCraftMace(CraftItemEvent event) {
         ItemStack result = event.getRecipe().getResult();
         if (result.getType() != Material.MACE) return;
 
-        // If registered, cancel
         if (!maceManager.canCraftMace()) {
             event.setCancelled(true);
             if (event.getWhoClicked() instanceof Player player) {
                 player.sendMessage(configManager.getPrefixedMessage("mace.already-exists", 
-                    java.util.Map.of("player", maceManager.getCurrentHolderName())));
+                    Map.of("player", maceManager.getCurrentHolderName())));
             }
             return;
         }
 
-        // Handle first craft registration
         if (event.getWhoClicked() instanceof Player player) {
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 ItemStack cursor = player.getItemOnCursor();
@@ -121,7 +115,6 @@ public class MaceListener implements Listener {
         }
     }
 
-    // Pickup
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPickupMace(EntityPickupItemEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
@@ -132,14 +125,11 @@ public class MaceListener implements Listener {
         }
     }
 
-    // Drop Prevention (Strict Mode or Config)
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerDrop(PlayerDropItemEvent event) {
         ItemStack item = event.getItemDrop().getItemStack();
         
         if (maceManager.isRegisteredMace(item)) {
-            // "nếu tắt thì thôi" -> If strict mode is OFF, check allow-drop config.
-            // If strict mode is ON, ALWAYS block drop.
             if (configManager.isStrictMode() || !configManager.isDropAllowed()) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(configManager.getPrefixedMessage("mace.cannot-drop"));
@@ -147,7 +137,6 @@ public class MaceListener implements Listener {
         }
     }
 
-    // Inventory Move Prevention (Strict Mode)
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
          if (!(event.getWhoClicked() instanceof Player player)) return;
@@ -158,7 +147,6 @@ public class MaceListener implements Listener {
          
          boolean hasMace = maceManager.isRegisteredMace(current) || maceManager.isRegisteredMace(cursor);
          
-         // Hotkey swap check (1-9)
          if (event.getClick().isKeyboardClick()) {
              ItemStack active = player.getInventory().getItem(event.getHotbarButton());
              if (maceManager.isRegisteredMace(active)) hasMace = true;
@@ -168,13 +156,11 @@ public class MaceListener implements Listener {
 
          InventoryType top = event.getView().getTopInventory().getType();
          
-         // Allowed types: CRAFTING (default), ANVIL, ENCHANTING, WORKBENCH
          boolean isAllowed = top == InventoryType.CRAFTING 
                  || top == InventoryType.ANVIL 
                  || top == InventoryType.ENCHANTING;
                  
          if (!isAllowed) {
-             // If interacting with top inventory OR moving from bottom to top (shift-click)
              if (event.getClickedInventory() == event.getView().getTopInventory() || event.isShiftClick()) {
                  event.setCancelled(true);
                  player.sendMessage(configManager.getPrefixedMessage("mace.cannot-move"));

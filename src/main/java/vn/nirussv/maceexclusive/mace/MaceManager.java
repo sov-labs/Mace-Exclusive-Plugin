@@ -41,7 +41,6 @@ public class MaceManager {
     }
 
     public boolean isRegisteredMace(ItemStack item) {
-        // Must contain the specific tracking key
         if (item == null || item.getType() != Material.MACE) return false;
         if (!item.hasItemMeta()) return false;
         return item.getItemMeta().getPersistentDataContainer().has(MACE_KEY, PersistentDataType.BYTE);
@@ -69,8 +68,9 @@ public class MaceManager {
     public void onPlayerBecameHolder(Player player, Location location) {
         repository.setCurrentHolder(player.getUniqueId());
         
-        // Visual effects
-        player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 20 * 10, 0, false, false, true)); // 10s glow
+        repository.setCurrentHolder(player.getUniqueId());
+        
+        player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 20 * 10, 0, false, false, true));
         player.playSound(location, org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 0.5f);
         
         broadcastOwnership(player, location);
