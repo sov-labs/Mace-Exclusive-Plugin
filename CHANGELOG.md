@@ -7,3 +7,14 @@
     - Prevents dropping Mace if strict mode is enabled.
     - Allows using Mace in Anvil and Enchanting Tables.
 - Configuration for Strict Mode (`strict-mode`).
+- **Effect Mace** features:
+    - Glowing effect on first craft (5m).
+    - Passive visual effects (Glowing, Soul Particles) when holding mace.
+    - Ground Slam effect on combat hit.
+    - Custom Kill Message.
+- **Mace Chaos** implementation:
+    - New "Mace of Chaos" item with corrupted lore.
+    - Hard recipe (Heavy Core, Netherite, Wither Rose).
+    - **Self-Curse**: Wither & Inventory Shuffle on craft/pickup.
+    - **Combat**: 20% chance to shuffle victim inventory.
+    - Glitch Kill Message.
