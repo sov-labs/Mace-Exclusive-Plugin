@@ -39,8 +39,10 @@ public class MaceExclusivePlugin extends JavaPlugin {
         getCommand("macee").setTabCompleter(cmd);
         
         // Register Listener
+        // Register Listener
         getServer().getPluginManager().registerEvents(new MaceListener(this, maceManager, configManager), this);
         getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.EffectMaceListener(this, maceManager, configManager), this);
+        getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.ChaosMaceListener(this, maceManager, configManager), this);
         
         // Start Effect Task (Passive Effects)
         new vn.nirussv.maceexclusive.task.MaceEffectTask(this, maceManager).runTaskTimer(this, 10L, 5L);
@@ -89,6 +91,40 @@ public class MaceExclusivePlugin extends JavaPlugin {
             }
         }
 
+        getServer().addRecipe(recipe);
+        
+        // Register Chaos Recipe
+        if (getConfig().getBoolean("mace-chaos.enabled", true)) {
+             registerChaosRecipe();
+        }
+    }
+
+    private void registerChaosRecipe() {
+        NamespacedKey requestKey = new NamespacedKey(this, "chaos_mace_recipe");
+        ItemStack result = maceFactory.createChaosMace();
+        ShapedRecipe recipe = new ShapedRecipe(requestKey, result);
+        
+        List<String> shape = getConfig().getStringList("mace-chaos.recipe.shape");
+        if (shape.size() != 3) {
+             recipe.shape("NHN", "HMH", "NWN");
+             recipe.setIngredient('N', Material.NETHERITE_INGOT);
+             recipe.setIngredient('H', Material.HEAVY_CORE);
+             recipe.setIngredient('M', Material.MACE);
+             recipe.setIngredient('W', Material.WITHER_ROSE);
+        } else {
+             recipe.shape(shape.toArray(new String[0]));
+             ConfigurationSection ingredients = getConfig().getConfigurationSection("mace-chaos.recipe.ingredients");
+             if (ingredients != null) {
+                 for (String key : ingredients.getKeys(false)) {
+                      String matName = ingredients.getString(key);
+                      Material mat = Material.matchMaterial(matName);
+                      if (mat != null) {
+                          recipe.setIngredient(key.charAt(0), mat);
+                      }
+                 }
+             }
+        }
+        
         getServer().addRecipe(recipe);
     }
 }
