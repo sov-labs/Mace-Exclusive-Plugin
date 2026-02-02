@@ -23,18 +23,49 @@ Originally part of **SabíSMP**, now a dedicated plugin.
 
 ### 🔨 Limits the Power of the MACE
 A legendary weapon with unique mechanics:
-*   **Singleton Existence**: Only **ONE** Mace can exist on the server at a time
-*   **Efffect Mace**:  When you first own a Mace, you are the most wanted player on the server
-*   **Strict Mode** (can be changed in config.yml):
-    *   **No Storing**: You cannot store the Mace in your inventory
-    *   **No Dropping**: You cannot drop the Mace
-    *   **Inventory Locking**: You cannot use the inventory while holding the Mace
+*   **Singleton Existence**: Only **ONE** Mace can exist on the server at a time (configurable).
+*   **Strict Mode** (Refined):
+    *   **Allowed**: Anvil, Enchanting Table, Player Inventory.
+    *   **Blocked**: Storing in Chests, Shulkers, Barrels, etc.
+    *   **Blocked**: Dropping the item (if strict mode is enabled).
 
-### 📜 Custom Recipe of the Mace
-*   **Custom Stats**: Configurable name, lore, and Custom Model Data.
-*   **Shape**: Vertical alignment by default (Heavy Core + Breeze Rods).
-*   **Fully Configurable**: Change ingredients and shape in `config.yml`.
+### ✨ Effect Mace (Visuals & Combat)
+*   **First Craft**: Player glows for 5 minutes (configurable) upon crafting.
+*   **Passive**:
+    *   *Holding*: Optional Glowing effect and Soul Particles.
+*   **Combat**:
+    *   *Ground Slam*: Hitting an entity causes blocks around to "jump" (visual effect).
+    *   *Kill Message*: Custom chat message when killing a player.
+
+### 🔮 Mace Chaos (The Glitch)
+A corrupted variant with chaotic properties:
+*   **Hard Recipe**: 3 Heavy Cores, 4 Netherite Ingots, 1 Wither Rose.
+*   **Self-Curse**: Wither + Inventory Shuffle when crafted or picked up.
+*   **Combat Effects**:
+    *   **Unknown Power**: 20% chance to shuffle victim's inventory for 5s.
+    *   **Glitch Kill**: Death message hides killer's name with glitches (e.g. "User was OBLITERATED by §kERROR").
+
+### 📜 Customization
+*   **Custom Stats**: Configurable name, lore, and Custom Model Data for both Maces.
+*   **Recipes**: Fully configurable shapes and ingredients.
+*   **Effects**: Toggle individual effects in `config.yml`.
 ---
+
+## Infrastructure & Project Structure
+
+The project follows a standard Maven/Gradle layout with a clean architecture:
+```
+Mace-Exclusive/
+├── src/main/java/vn/nirussv/maceexclusive/
+│   ├── config/       # Configuration Management
+│   ├── listener/     # Event Listeners (Strict, Effects, Chaos)
+│   ├── mace/         # Mace Logic & Factory
+│   ├── task/         # Runnables (Particles, Shuffle)
+│   └── MaceExclusivePlugin.java # Main Entry Point
+└── src/main/resources/
+     ├── config.yml    # Main Configuration
+     └── plugin.yml    # Plugin Description
+```
 
 ## Installation
 
