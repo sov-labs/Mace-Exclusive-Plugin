@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -26,58 +27,70 @@ public class MaceManager {
     private final MaceRepository repository;
     private final ConfigManager configManager;
     private final MaceFactory factory;
-    
-    private final NamespacedKey MACE_KEY;
-    private final NamespacedKey MACE_OWNER_KEY;
 
     public MaceManager(MaceExclusivePlugin plugin, MaceRepository repository, ConfigManager configManager, MaceFactory factory) {
         this.plugin = plugin;
         this.repository = repository;
         this.configManager = configManager;
         this.factory = factory;
-        
-        this.MACE_KEY = new NamespacedKey(plugin, "exclusive_mace_id");
-        this.MACE_OWNER_KEY = new NamespacedKey(plugin, "exclusive_mace_owner");
+    }
+
+    public MaceType getMaceType(ItemStack item) {
+        return factory.getMaceType(item);
     }
 
     public boolean isRegisteredMace(ItemStack item) {
-        if (item == null || item.getType() != Material.MACE) return false;
-        if (!item.hasItemMeta()) return false;
-        return item.getItemMeta().getPersistentDataContainer().has(MACE_KEY, PersistentDataType.BYTE);
+        return getMaceType(item) != null;
     }
 
-    public boolean canCraftMace() {
-        return !repository.isMaceRegistered();
+    public boolean isPowerMace(ItemStack item) {
+        return getMaceType(item) == MaceType.POWER;
     }
 
-    public boolean registerMace(ItemStack item, UUID owner) {
-        if (item == null || item.getType() != Material.MACE) return false;
-        if (repository.isMaceRegistered()) return false;
+    public boolean isChaosMace(ItemStack item) {
+        return getMaceType(item) == MaceType.CHAOS;
+    }
+
+    public boolean canCraft(MaceType type) {
+        return !repository.isRegistered(type);
+    }
+
+    public boolean register(ItemStack item, UUID owner, MaceType type) {
+        if (item == null || item.getType() != Material.MACE) {
+            return false;
+        }
+        if (repository.isRegistered(type)) {
+            return false;
+        }
 
         ItemMeta meta = item.getItemMeta();
-        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        if (meta == null) {
+            return false;
+        }
         
-        pdc.set(MACE_KEY, PersistentDataType.BYTE, (byte) 1);
-        pdc.set(MACE_OWNER_KEY, PersistentDataType.STRING, owner.toString());
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        NamespacedKey key = new NamespacedKey(plugin, type.getPdcKey());
+        pdc.set(key, PersistentDataType.BYTE, (byte) 1);
+        
+        NamespacedKey ownerKey = new NamespacedKey(plugin, type.getPdcKey() + "_owner");
+        pdc.set(ownerKey, PersistentDataType.STRING, owner.toString());
         
         item.setItemMeta(meta);
-        repository.setCurrentHolder(owner);
+        repository.setHolder(type, owner);
         return true;
     }
 
-    public void onPlayerBecameHolder(Player player, Location location) {
-        repository.setCurrentHolder(player.getUniqueId());
+    public void onPlayerBecameHolder(Player player, Location location, MaceType type) {
+        repository.setHolder(type, player.getUniqueId());
         
-        repository.setCurrentHolder(player.getUniqueId());
+        player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 200, 0, false, false, true));
+        player.playSound(location, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 0.5f);
         
-        player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 20 * 10, 0, false, false, true));
-        player.playSound(location, org.bukkit.Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 0.5f);
-        
-        broadcastOwnership(player, location);
-        showAcquisitionUI(player);
+        broadcastOwnership(player, location, type);
+        showAcquisitionUI(player, type);
     }
 
-    private void broadcastOwnership(Player player, Location location) {
+    private void broadcastOwnership(Player player, Location location, MaceType type) {
         Map<String, String> placeholders = Map.of(
             "player", player.getName(),
             "x", String.valueOf(location.getBlockX()),
@@ -86,13 +99,18 @@ public class MaceManager {
             "world", location.getWorld().getName()
         );
         
-        Component msg = configManager.getMessage("mace.crafted", placeholders);
+        String messageKey = type == MaceType.CHAOS ? "chaos.crafted" : "mace.crafted";
+        Component msg = configManager.getMessage(messageKey, placeholders);
         Bukkit.broadcast(msg);
     }
     
-    private void showAcquisitionUI(Player player) {
-        Component title = configManager.getMessage("mace.title");
-        Component subtitle = configManager.getMessage("mace.subtitle");
+    private void showAcquisitionUI(Player player, MaceType type) {
+        String titleKey = type == MaceType.CHAOS ? "chaos.title" : "mace.title";
+        String subtitleKey = type == MaceType.CHAOS ? "chaos.subtitle" : "mace.subtitle";
+        String warningKey = type == MaceType.CHAOS ? "chaos.warning" : "mace.warning";
+        
+        Component title = configManager.getMessage(titleKey);
+        Component subtitle = configManager.getMessage(subtitleKey);
         
         Title titleObj = Title.title(
             title,
@@ -100,19 +118,53 @@ public class MaceManager {
             Title.Times.times(Duration.ofMillis(500), Duration.ofSeconds(3), Duration.ofMillis(500))
         );
         player.showTitle(titleObj);
-        player.sendMessage(configManager.getPrefixedMessage("mace.warning"));
+        player.sendMessage(configManager.getPrefixedMessage(warningKey));
     }
 
-    public boolean reset() {
-        if (!repository.isMaceRegistered()) return false;
-        repository.reset();
+    public boolean reset(MaceType type) {
+        if (!repository.isRegistered(type)) {
+            return false;
+        }
+        repository.reset(type);
+        return true;
+    }
+
+    public boolean resetAll() {
+        repository.resetAll();
         return true;
     }
     
-    public String getCurrentHolderName() {
-        UUID uuid = repository.getCurrentHolder();
-        if (uuid == null) return null;
+    public String getHolderName(MaceType type) {
+        UUID uuid = repository.getHolder(type);
+        if (uuid == null) {
+            return null;
+        }
         Player p = Bukkit.getPlayer(uuid);
         return (p != null) ? p.getName() : Bukkit.getOfflinePlayer(uuid).getName();
+    }
+
+    @Deprecated
+    public boolean canCraftMace() {
+        return canCraft(MaceType.POWER);
+    }
+
+    @Deprecated
+    public boolean registerMace(ItemStack item, UUID owner) {
+        return register(item, owner, MaceType.POWER);
+    }
+
+    @Deprecated
+    public void onPlayerBecameHolder(Player player, Location location) {
+        onPlayerBecameHolder(player, location, MaceType.POWER);
+    }
+
+    @Deprecated
+    public boolean reset() {
+        return reset(MaceType.POWER);
+    }
+
+    @Deprecated
+    public String getCurrentHolderName() {
+        return getHolderName(MaceType.POWER);
     }
 }
