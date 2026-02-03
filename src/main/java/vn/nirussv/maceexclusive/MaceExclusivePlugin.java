@@ -16,6 +16,7 @@ import vn.nirussv.maceexclusive.mace.MaceRepository;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import org.bukkit.inventory.Recipe;
 
 public class MaceExclusivePlugin extends JavaPlugin {
@@ -26,28 +27,55 @@ public class MaceExclusivePlugin extends JavaPlugin {
     private MaceManager maceManager;
 
     @Override
+
     public void onEnable() {
-        saveDefaultConfig();
-        
-        this.configManager = new ConfigManager(this);
-        this.maceFactory = new MaceFactory(this);
-        this.maceRepository = new MaceRepository(this);
-        this.maceManager = new MaceManager(this, maceRepository, configManager, maceFactory);
-        
-        MaceCommand cmd = new MaceCommand(this, maceManager, configManager, maceFactory);
-        getCommand("macee").setExecutor(cmd);
-        getCommand("macee").setTabCompleter(cmd);
-        
-        getServer().getPluginManager().registerEvents(new MaceListener(this, maceManager, configManager), this);
-        getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.EffectMaceListener(this, maceManager, configManager), this);
-        getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.ChaosMaceListener(this, maceManager, configManager), this);
-        
-        new vn.nirussv.maceexclusive.task.MaceEffectTask(this, maceManager).runTaskTimer(this, 10L, 5L);
-        
-        removeVanillaRecipe();
-        registerRecipe();
-        
-        getLogger().info("Mace-Exclusive has been enabled! Version: " + getDescription().getVersion());
+        try {
+            // 1. Config
+            saveDefaultConfig();
+            reloadConfig(); // Ensure loaded
+            
+            // 2. Managers
+            this.configManager = new ConfigManager(this);
+            // Verify config loaded 
+            if (!getConfig().contains("settings.language")) {
+                 getLogger().warning("Config.yml might be corrupt or missing settings! regenerating defaults if empty...");
+            }
+            this.configManager.reload(); // Load lang files immediately
+            
+            this.maceFactory = new MaceFactory(this);
+            this.maceRepository = new MaceRepository(this);
+            this.maceManager = new MaceManager(this, maceRepository, configManager, maceFactory);
+            
+            // 3. Command
+            MaceCommand cmd = new MaceCommand(this, maceManager, configManager, maceFactory);
+            if (getCommand("macee") != null) {
+                getCommand("macee").setExecutor(cmd);
+                getCommand("macee").setTabCompleter(cmd);
+            } else {
+                getLogger().severe("Command 'macee' not found in plugin.yml!");
+            }
+            
+            // 4. Listeners
+            getServer().getPluginManager().registerEvents(new MaceListener(this, maceManager, configManager), this);
+            getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.EffectMaceListener(this, maceManager, configManager), this);
+            getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.ChaosMaceListener(this, maceManager, configManager), this);
+            
+            // 5. Tasks
+            try {
+                new vn.nirussv.maceexclusive.task.MaceEffectTask(this, maceManager).runTaskTimer(this, 10L, 5L);
+            } catch (Exception e) {
+                 getLogger().log(Level.SEVERE, "Failed to start MaceEffectTask", e);
+            }
+            
+            // 6. Recipes
+            removeVanillaRecipe();
+            registerRecipe();
+            
+            getLogger().info("Mace-Exclusive has been enabled! Version: " + getDescription().getVersion());
+        } catch (Throwable t) {
+            getLogger().log(Level.SEVERE, "CRITICAL ERROR: Failed to enable Mace-Exclusive!", t);
+            // Do not disable plugin immediately to allow reading logs, but functionality will be broken.
+        }
     }
 
     @Override

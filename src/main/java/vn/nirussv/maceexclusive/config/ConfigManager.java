@@ -23,6 +23,7 @@ public class ConfigManager {
 
     public ConfigManager(MaceExclusivePlugin plugin) {
         this.plugin = plugin;
+        reload(); // Load text immediately
     }
 
     public void reload() {
@@ -39,8 +40,6 @@ public class ConfigManager {
             plugin.saveResource(fileName, false);
         }
 
-        langConfig = YamlConfiguration.loadConfiguration(langFile);
-        
         langConfig = YamlConfiguration.loadConfiguration(langFile);
         
         InputStream defStream = plugin.getResource(fileName);
