@@ -4,20 +4,23 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.plugin.java.JavaPlugin;
 import vn.nirussv.maceexclusive.command.MaceCommand;
 import vn.nirussv.maceexclusive.config.ConfigManager;
+import vn.nirussv.maceexclusive.listener.ChaosMaceListener;
+import vn.nirussv.maceexclusive.listener.EffectMaceListener;
 import vn.nirussv.maceexclusive.listener.MaceListener;
 import vn.nirussv.maceexclusive.mace.MaceFactory;
 import vn.nirussv.maceexclusive.mace.MaceManager;
 import vn.nirussv.maceexclusive.mace.MaceRepository;
+import vn.nirussv.maceexclusive.mace.MaceType;
+import vn.nirussv.maceexclusive.task.MaceEffectTask;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
-import org.bukkit.inventory.Recipe;
 
 public class MaceExclusivePlugin extends JavaPlugin {
 
@@ -27,26 +30,21 @@ public class MaceExclusivePlugin extends JavaPlugin {
     private MaceManager maceManager;
 
     @Override
-
     public void onEnable() {
         try {
-            // 1. Config
             saveDefaultConfig();
-            reloadConfig(); // Ensure loaded
+            reloadConfig();
             
-            // 2. Managers
             this.configManager = new ConfigManager(this);
-            // Verify config loaded 
             if (!getConfig().contains("settings.language")) {
-                 getLogger().warning("Config.yml might be corrupt or missing settings! regenerating defaults if empty...");
+                getLogger().warning("Config.yml might be corrupt or missing settings!");
             }
-            this.configManager.reload(); // Load lang files immediately
+            this.configManager.reload();
             
             this.maceFactory = new MaceFactory(this);
             this.maceRepository = new MaceRepository(this);
             this.maceManager = new MaceManager(this, maceRepository, configManager, maceFactory);
             
-            // 3. Command
             MaceCommand cmd = new MaceCommand(this, maceManager, configManager, maceFactory);
             if (getCommand("macee") != null) {
                 getCommand("macee").setExecutor(cmd);
@@ -55,26 +53,25 @@ public class MaceExclusivePlugin extends JavaPlugin {
                 getLogger().severe("Command 'macee' not found in plugin.yml!");
             }
             
-            // 4. Listeners
-            getServer().getPluginManager().registerEvents(new MaceListener(this, maceManager, configManager), this);
-            getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.EffectMaceListener(this, maceManager, configManager), this);
-            getServer().getPluginManager().registerEvents(new vn.nirussv.maceexclusive.listener.ChaosMaceListener(this, maceManager, configManager), this);
+            getServer().getPluginManager().registerEvents(
+                new MaceListener(this, maceManager, configManager, maceFactory), this);
+            getServer().getPluginManager().registerEvents(
+                new EffectMaceListener(this, maceManager, configManager), this);
+            getServer().getPluginManager().registerEvents(
+                new ChaosMaceListener(this, maceManager, configManager, maceFactory), this);
             
-            // 5. Tasks
             try {
-                new vn.nirussv.maceexclusive.task.MaceEffectTask(this, maceManager).runTaskTimer(this, 10L, 5L);
+                new MaceEffectTask(this, maceManager).runTaskTimer(this, 10L, 5L);
             } catch (Exception e) {
-                 getLogger().log(Level.SEVERE, "Failed to start MaceEffectTask", e);
+                getLogger().log(Level.SEVERE, "Failed to start MaceEffectTask", e);
             }
             
-            // 6. Recipes
             removeVanillaRecipe();
-            registerRecipe();
+            registerRecipes();
             
             getLogger().info("Mace-Exclusive has been enabled! Version: " + getDescription().getVersion());
         } catch (Throwable t) {
             getLogger().log(Level.SEVERE, "CRITICAL ERROR: Failed to enable Mace-Exclusive!", t);
-            // Do not disable plugin immediately to allow reading logs, but functionality will be broken.
         }
     }
 
@@ -100,74 +97,68 @@ public class MaceExclusivePlugin extends JavaPlugin {
         }
     }
 
-    private void registerRecipe() {
-        if (!getConfig().getBoolean("mace.recipe.enabled", true)) return;
+    private void registerRecipes() {
+        registerMaceRecipe(MaceType.POWER, "exclusive_mace_recipe", "mace.recipe");
+        
+        if (getConfig().getBoolean("mace-chaos.enabled", true)) {
+            registerMaceRecipe(MaceType.CHAOS, "chaos_mace_recipe", "mace-chaos.recipe");
+        }
+    }
 
-        NamespacedKey requestKey = new NamespacedKey(this, "exclusive_mace_recipe");
-        ItemStack result = maceFactory.createMace();
-        ShapedRecipe recipe = new ShapedRecipe(requestKey, result);
+    private void registerMaceRecipe(MaceType type, String recipeKey, String configPath) {
+        if (!getConfig().getBoolean(configPath.replace(".recipe", ".recipe.enabled"), true) 
+            && type == MaceType.POWER) {
+            return;
+        }
 
-        List<String> shape = getConfig().getStringList("mace.recipe.shape");
+        NamespacedKey key = new NamespacedKey(this, recipeKey);
+        ItemStack result = maceFactory.createMace(type);
+        ShapedRecipe recipe = new ShapedRecipe(key, result);
+
+        List<String> shape = getConfig().getStringList(configPath + ".shape");
         if (shape.size() != 3) {
-            getLogger().warning("Invalid recipe shape in config! parsing default.");
-            recipe.shape(" H ", " I ", " B ");
-            recipe.setIngredient('H', Material.HEAVY_CORE);
-            recipe.setIngredient('I', Material.NETHERITE_INGOT);
-            recipe.setIngredient('B', Material.BREEZE_ROD);
+            if (type == MaceType.POWER) {
+                recipe.shape(" H ", " I ", " B ");
+                recipe.setIngredient('H', Material.HEAVY_CORE);
+                recipe.setIngredient('I', Material.NETHERITE_INGOT);
+                recipe.setIngredient('B', Material.BREEZE_ROD);
+            } else {
+                recipe.shape("NHN", "HMH", "NWN");
+                recipe.setIngredient('N', Material.NETHERITE_INGOT);
+                recipe.setIngredient('H', Material.HEAVY_CORE);
+                recipe.setIngredient('M', Material.MACE);
+                recipe.setIngredient('W', Material.WITHER_ROSE);
+            }
         } else {
             recipe.shape(shape.toArray(new String[0]));
             
-            ConfigurationSection ingredients = getConfig().getConfigurationSection("mace.recipe.ingredients");
+            ConfigurationSection ingredients = getConfig().getConfigurationSection(configPath + ".ingredients");
             if (ingredients != null) {
-                for (String key : ingredients.getKeys(false)) {
-                    String matName = ingredients.getString(key);
+                for (String k : ingredients.getKeys(false)) {
+                    String matName = ingredients.getString(k);
                     Material mat = Material.matchMaterial(matName);
                     if (mat != null) {
-                        recipe.setIngredient(key.charAt(0), mat);
+                        recipe.setIngredient(k.charAt(0), mat);
                     } else {
-                        getLogger().warning("Invalid ingredient material definition: " + key + " -> " + matName);
-                        getLogger().warning("Invalid ingredient material: " + matName);
+                        getLogger().warning("Invalid ingredient: " + k + " -> " + matName);
                     }
                 }
             }
         }
         
-        // Debug
-        getLogger().info("Registered custom Mace recipe with key: " + requestKey);
-
         getServer().addRecipe(recipe);
-        
-        if (getConfig().getBoolean("mace-chaos.enabled", true)) {
-             registerChaosRecipe();
-        }
+        getLogger().info("Registered " + type.name() + " Mace recipe: " + key);
     }
 
-    private void registerChaosRecipe() {
-        NamespacedKey requestKey = new NamespacedKey(this, "chaos_mace_recipe");
-        ItemStack result = maceFactory.createChaosMace();
-        ShapedRecipe recipe = new ShapedRecipe(requestKey, result);
-        
-        List<String> shape = getConfig().getStringList("mace-chaos.recipe.shape");
-        if (shape.size() != 3) {
-             recipe.shape("NHN", "HMH", "NWN");
-             recipe.setIngredient('N', Material.NETHERITE_INGOT);
-             recipe.setIngredient('H', Material.HEAVY_CORE);
-             recipe.setIngredient('M', Material.MACE);
-             recipe.setIngredient('W', Material.WITHER_ROSE);
-        } else {
-             recipe.shape(shape.toArray(new String[0]));
-             ConfigurationSection ingredients = getConfig().getConfigurationSection("mace-chaos.recipe.ingredients");
-             if (ingredients != null) {
-                 for (String key : ingredients.getKeys(false)) {
-                      String matName = ingredients.getString(key);
-                      Material mat = Material.matchMaterial(matName);
-                      if (mat != null) {
-                          recipe.setIngredient(key.charAt(0), mat);
-                      }
-                 }
-             }
-        }
-        
-        getServer().addRecipe(recipe);
+    public MaceFactory getMaceFactory() {
+        return maceFactory;
+    }
+
+    public MaceManager getMaceManager() {
+        return maceManager;
+    }
+
+    public ConfigManager getConfigManager() {
+        return configManager;
     }
 }
