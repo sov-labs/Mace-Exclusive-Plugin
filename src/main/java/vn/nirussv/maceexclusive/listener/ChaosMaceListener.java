@@ -19,45 +19,91 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import vn.nirussv.maceexclusive.MaceExclusivePlugin;
 import vn.nirussv.maceexclusive.config.ConfigManager;
+import vn.nirussv.maceexclusive.mace.MaceFactory;
 import vn.nirussv.maceexclusive.mace.MaceManager;
+import vn.nirussv.maceexclusive.mace.MaceType;
 import vn.nirussv.maceexclusive.task.InventoryShuffleTask;
 
+import java.util.Map;
 import java.util.Random;
 
 public class ChaosMaceListener implements Listener {
 
     private final MaceExclusivePlugin plugin;
     private final MaceManager maceManager;
+    private final MaceFactory maceFactory;
     private final ConfigManager configManager;
     private final Random random = new Random();
 
-    public ChaosMaceListener(MaceExclusivePlugin plugin, MaceManager maceManager, ConfigManager configManager) {
+    public ChaosMaceListener(MaceExclusivePlugin plugin, MaceManager maceManager, ConfigManager configManager, MaceFactory maceFactory) {
         this.plugin = plugin;
         this.maceManager = maceManager;
+        this.maceFactory = maceFactory;
         this.configManager = configManager;
-    }
-
-    private boolean isChaosMace(ItemStack item) {
-        if (item == null || item.getType() != Material.MACE) return false;
-        if (!item.hasItemMeta()) return false;
-        if (!item.getItemMeta().hasCustomModelData()) return false;
-        
-        int chaosModel = plugin.getConfig().getInt("mace-chaos.custom-model-data", 2002);
-        return item.getItemMeta().getCustomModelData() == chaosModel;
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPrepareCraft(PrepareItemCraftEvent event) {
+        if (event.getRecipe() == null) return;
+        ItemStack result = event.getInventory().getResult();
+        
+        if (result == null || result.getType() != Material.MACE) return;
+        
+        if (maceFactory.isChaosMace(result)) {
+            if (!maceManager.canCraft(MaceType.CHAOS)) {
+                event.getInventory().setResult(null);
+            }
+        }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onCraftChaos(CraftItemEvent event) {
         ItemStack result = event.getRecipe().getResult();
-        if (!isChaosMace(result)) return;
+        if (!maceFactory.isChaosMace(result)) return;
+
+        if (event.isShiftClick()) {
+            event.setCancelled(true);
+            if (event.getWhoClicked() instanceof Player player) {
+                player.sendMessage(configManager.getPrefixedMessage("mace.cannot-shift-click"));
+            }
+            return;
+        }
+
+        if (!maceManager.canCraft(MaceType.CHAOS)) {
+            event.setCancelled(true);
+            if (event.getWhoClicked() instanceof Player player) {
+                String holderName = maceManager.getHolderName(MaceType.CHAOS);
+                player.sendMessage(configManager.getPrefixedMessage("chaos.already-exists", 
+                    Map.of("player", holderName != null ? holderName : "Unknown")));
+            }
+            return;
+        }
 
         if (event.getWhoClicked() instanceof Player player) {
-            applySelfCurse(player);
-            announceChaos(player, "crafted");
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                ItemStack cursor = player.getItemOnCursor();
+                if (cursor != null && maceFactory.isChaosMace(cursor)) {
+                    if (maceManager.canCraft(MaceType.CHAOS)) {
+                        if (maceManager.register(cursor, player.getUniqueId(), MaceType.CHAOS)) {
+                            maceManager.onPlayerBecameHolder(player, player.getLocation(), MaceType.CHAOS);
+                            applySelfCurse(player);
+                        }
+                    }
+                    return;
+                }
+                
+                for (ItemStack item : player.getInventory().getContents()) {
+                    if (item != null && maceFactory.isChaosMace(item)) {
+                        if (maceManager.canCraft(MaceType.CHAOS)) {
+                            if (maceManager.register(item, player.getUniqueId(), MaceType.CHAOS)) {
+                                maceManager.onPlayerBecameHolder(player, player.getLocation(), MaceType.CHAOS);
+                                applySelfCurse(player);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }, 1L);
         }
     }
 
@@ -66,9 +112,9 @@ public class ChaosMaceListener implements Listener {
         if (!(event.getEntity() instanceof Player player)) return;
         ItemStack item = event.getItem().getItemStack();
         
-        if (isChaosMace(item)) {
+        if (maceManager.isChaosMace(item)) {
+            maceManager.onPlayerBecameHolder(player, player.getLocation(), MaceType.CHAOS);
             applySelfCurse(player);
-            announceChaos(player, "found");
         }
     }
 
@@ -78,8 +124,9 @@ public class ChaosMaceListener implements Listener {
         if (!(event.getEntity() instanceof Player victim)) return;
 
         ItemStack weapon = attacker.getInventory().getItemInMainHand();
-        if (isChaosMace(weapon)) {
-            if (random.nextDouble() < plugin.getConfig().getDouble("mace-chaos.effects.shuffle-inventory.chance", 0.2)) {
+        if (maceManager.isChaosMace(weapon)) {
+            double chance = plugin.getConfig().getDouble("mace-chaos.effects.shuffle-inventory.chance", 0.2);
+            if (random.nextDouble() < chance) {
                 int duration = plugin.getConfig().getInt("mace-chaos.effects.shuffle-inventory.duration", 5);
                 int interval = plugin.getConfig().getInt("mace-chaos.effects.shuffle-inventory.interval", 5);
                 
@@ -96,16 +143,13 @@ public class ChaosMaceListener implements Listener {
 
         if (killer != null) {
             ItemStack weapon = killer.getInventory().getItemInMainHand();
-            if (isChaosMace(weapon)) {
+            if (maceManager.isChaosMace(weapon)) {
                 if (plugin.getConfig().getBoolean("mace-chaos.effects.glitch-kill-name", true)) {
-                    Component originalMsg = event.deathMessage();
-                    if (originalMsg != null) {
-                         event.deathMessage(
-                                 Component.text(victim.getName(), NamedTextColor.RED)
-                                 .append(Component.text(" was OBLITERATED by ", NamedTextColor.GRAY))
-                                 .append(Component.text("§kERROR_404", NamedTextColor.DARK_PURPLE))
-                         );
-                    }
+                    event.deathMessage(
+                        Component.text(victim.getName(), NamedTextColor.RED)
+                        .append(Component.text(" was OBLITERATED by ", NamedTextColor.GRAY))
+                        .append(Component.text("§kERROR_404", NamedTextColor.DARK_PURPLE))
+                    );
                 }
             }
         }
@@ -121,23 +165,5 @@ public class ChaosMaceListener implements Listener {
         
         player.sendMessage("§5The §kCHAOS§r§5 corrupts your body!");
         new InventoryShuffleTask(player, shuffleDur, 10).runTaskTimer(plugin, 0L, 1L);
-    }
-    
-    private void announceChaos(Player player, String action) {
-        if (!plugin.getConfig().getBoolean("mace-chaos.effects.announce-on-chat", true)) return;
-        
-        String msgKey = action.equals("crafted") ? "mace.chaos-crafted" : "mace.chaos-found";
-        
-        Component msg = Component.text("Warning: ", NamedTextColor.RED)
-                .append(Component.text(player.getName(), NamedTextColor.YELLOW))
-                .append(Component.text(" has obtained the ", NamedTextColor.GRAY))
-                .append(Component.text("MACE OF CHAOS", NamedTextColor.DARK_PURPLE, TextDecoration.BOLD, TextDecoration.OBFUSCATED))
-                .append(Component.text("!", NamedTextColor.RED));
-                
-        Bukkit.broadcast(msg);
-        
-        if (plugin.getConfig().getBoolean("mace-chaos.effects.glowing", true)) {
-             player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 600, 0));
-        }
     }
 }

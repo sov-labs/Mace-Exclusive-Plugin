@@ -1,6 +1,5 @@
 package vn.nirussv.maceexclusive.listener;
 
-import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
@@ -9,9 +8,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
@@ -24,7 +23,9 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import vn.nirussv.maceexclusive.MaceExclusivePlugin;
 import vn.nirussv.maceexclusive.config.ConfigManager;
+import vn.nirussv.maceexclusive.mace.MaceFactory;
 import vn.nirussv.maceexclusive.mace.MaceManager;
+import vn.nirussv.maceexclusive.mace.MaceType;
 
 import java.util.Map;
 
@@ -33,11 +34,13 @@ public class MaceListener implements Listener {
     private final MaceExclusivePlugin plugin;
     private final MaceManager maceManager;
     private final ConfigManager configManager;
+    private final MaceFactory maceFactory;
 
-    public MaceListener(MaceExclusivePlugin plugin, MaceManager maceManager, ConfigManager configManager) {
+    public MaceListener(MaceExclusivePlugin plugin, MaceManager maceManager, ConfigManager configManager, MaceFactory maceFactory) {
         this.plugin = plugin;
         this.maceManager = maceManager;
         this.configManager = configManager;
+        this.maceFactory = maceFactory;
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -47,7 +50,7 @@ public class MaceListener implements Listener {
 
         ItemStack weapon = attacker.getInventory().getItemInMainHand();
         
-        if (maceManager.isRegisteredMace(weapon)) {
+        if (maceManager.isPowerMace(weapon)) {
             victim.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0));
             attacker.playSound(attacker.getLocation(), Sound.ENTITY_WARDEN_ATTACK_IMPACT, 1f, 1f);
         }
@@ -62,9 +65,12 @@ public class MaceListener implements Listener {
         
         if (item == null || item.getType() != Material.MACE) return;
         
-        if (!maceManager.isRegisteredMace(item)) {
-            if (maceManager.registerMace(item, player.getUniqueId())) {
-                maceManager.onPlayerBecameHolder(player, player.getLocation());
+        MaceType type = maceManager.getMaceType(item);
+        if (type == null) {
+            if (maceManager.canCraft(MaceType.POWER)) {
+                if (maceManager.register(item, player.getUniqueId(), MaceType.POWER)) {
+                    maceManager.onPlayerBecameHolder(player, player.getLocation(), MaceType.POWER);
+                }
             }
         }
     }
@@ -76,21 +82,19 @@ public class MaceListener implements Listener {
         
         if (result == null || result.getType() != Material.MACE) return;
         
-        if (!maceManager.canCraftMace()) {
+        MaceType type = maceFactory.getMaceType(result);
+        if (type == null) return;
+        
+        if (!maceManager.canCraft(type)) {
             event.getInventory().setResult(null);
         }
     }
 
-    /**
-     * Block CRAFTER BLOCK (1.21+) from crafting Mace.
-     * This prevents automation bypass using the new Crafter block.
-     */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onCrafterCraft(CrafterCraftEvent event) {
         ItemStack result = event.getResult();
         if (result == null || result.getType() != Material.MACE) return;
         
-        // Always block Crafter from making Mace (no permission check - automation not allowed)
         event.setCancelled(true);
         
         if (configManager.isVerboseLogging()) {
@@ -98,16 +102,11 @@ public class MaceListener implements Listener {
         }
     }
 
-    /**
-     * Block hoppers and other inventory movers from moving Mace around.
-     * This prevents duplication exploits with automation.
-     */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryMoveItem(InventoryMoveItemEvent event) {
         ItemStack item = event.getItem();
         if (item.getType() != Material.MACE) return;
         
-        // Block any automated movement of Mace (hoppers, droppers, etc.)
         if (maceManager.isRegisteredMace(item)) {
             event.setCancelled(true);
         }
@@ -118,47 +117,52 @@ public class MaceListener implements Listener {
         ItemStack result = event.getRecipe().getResult();
         if (result.getType() != Material.MACE) return;
 
-        if (maceManager.isRegisteredMace(result) || result.getType() == Material.MACE) {
-            // Prevent Shift-Click (Mass Crafting / Glitch Prevention)
-            if (event.isShiftClick()) {
-                event.setCancelled(true);
-                if (event.getWhoClicked() instanceof Player player) {
-                    player.sendMessage(configManager.getPrefixedMessage("mace.cannot-shift-click", java.util.Map.of())); 
-                    // Fallback message if key missing
-                    if (configManager.getRawMessage("mace.cannot-shift-click").startsWith("Missing")) {
-                        player.sendMessage("§c[Mace-Exclusive] §cShift-Click crafting is disabled for this item!");
-                    }
-                }
-                return;
+        MaceType type = maceFactory.getMaceType(result);
+        if (type == null) return;
+
+        if (event.isShiftClick()) {
+            event.setCancelled(true);
+            if (event.getWhoClicked() instanceof Player player) {
+                player.sendMessage(configManager.getPrefixedMessage("mace.cannot-shift-click"));
             }
-        
-            if (!maceManager.canCraftMace()) {
-                event.setCancelled(true);
-                if (event.getWhoClicked() instanceof Player player) {
-                    player.sendMessage(configManager.getPrefixedMessage("mace.already-exists", 
-                        Map.of("player", maceManager.getCurrentHolderName())));
-                }
-                return;
+            return;
+        }
+    
+        if (!maceManager.canCraft(type)) {
+            event.setCancelled(true);
+            if (event.getWhoClicked() instanceof Player player) {
+                String holderName = maceManager.getHolderName(type);
+                String msgKey = type == MaceType.CHAOS ? "chaos.already-exists" : "mace.already-exists";
+                player.sendMessage(configManager.getPrefixedMessage(msgKey, 
+                    Map.of("player", holderName != null ? holderName : "Unknown")));
             }
+            return;
         }
 
         if (event.getWhoClicked() instanceof Player player) {
+            MaceType finalType = type;
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 ItemStack cursor = player.getItemOnCursor();
-                if (cursor != null && cursor.getType() == Material.MACE && !maceManager.isRegisteredMace(cursor)) {
-                     if (maceManager.registerMace(cursor, player.getUniqueId())) {
-                         maceManager.onPlayerBecameHolder(player, player.getLocation());
-                     }
-                     return;
+                if (cursor != null && cursor.getType() == Material.MACE) {
+                    MaceType cursorType = maceFactory.getMaceType(cursor);
+                    if (cursorType == finalType && maceManager.canCraft(finalType)) {
+                        if (maceManager.register(cursor, player.getUniqueId(), finalType)) {
+                            maceManager.onPlayerBecameHolder(player, player.getLocation(), finalType);
+                        }
+                    }
+                    return;
                 }
                 
                 for (ItemStack item : player.getInventory().getContents()) {
-                     if (item != null && item.getType() == Material.MACE && !maceManager.isRegisteredMace(item)) {
-                         if (maceManager.registerMace(item, player.getUniqueId())) {
-                             maceManager.onPlayerBecameHolder(player, player.getLocation());
-                         }
-                         break;
-                     }
+                    if (item != null && item.getType() == Material.MACE) {
+                        MaceType itemType = maceFactory.getMaceType(item);
+                        if (itemType == finalType && maceManager.canCraft(finalType)) {
+                            if (maceManager.register(item, player.getUniqueId(), finalType)) {
+                                maceManager.onPlayerBecameHolder(player, player.getLocation(), finalType);
+                            }
+                            break;
+                        }
+                    }
                 }
             }, 1L);
         }
@@ -169,8 +173,9 @@ public class MaceListener implements Listener {
         if (!(event.getEntity() instanceof Player player)) return;
         ItemStack item = event.getItem().getItemStack();
         
-        if (maceManager.isRegisteredMace(item)) {
-            maceManager.onPlayerBecameHolder(player, player.getLocation());
+        MaceType type = maceManager.getMaceType(item);
+        if (type == MaceType.POWER) {
+            maceManager.onPlayerBecameHolder(player, player.getLocation(), MaceType.POWER);
         }
     }
 
@@ -188,32 +193,34 @@ public class MaceListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
-         if (!(event.getWhoClicked() instanceof Player player)) return;
-         if (!configManager.isStrictMode()) return;
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (!configManager.isStrictMode()) return;
 
-         ItemStack current = event.getCurrentItem();
-         ItemStack cursor = event.getCursor();
+        ItemStack current = event.getCurrentItem();
+        ItemStack cursor = event.getCursor();
          
-         boolean hasMace = maceManager.isRegisteredMace(current) || maceManager.isRegisteredMace(cursor);
+        boolean hasMace = maceManager.isRegisteredMace(current) || maceManager.isRegisteredMace(cursor);
          
-         if (event.getClick().isKeyboardClick()) {
-             ItemStack active = player.getInventory().getItem(event.getHotbarButton());
-             if (maceManager.isRegisteredMace(active)) hasMace = true;
-         }
+        if (event.getClick().isKeyboardClick()) {
+            ItemStack active = player.getInventory().getItem(event.getHotbarButton());
+            if (maceManager.isRegisteredMace(active)) {
+                hasMace = true;
+            }
+        }
          
-         if (!hasMace) return;
+        if (!hasMace) return;
 
-         InventoryType top = event.getView().getTopInventory().getType();
+        InventoryType top = event.getView().getTopInventory().getType();
          
-         boolean isAllowed = top == InventoryType.CRAFTING 
-                 || top == InventoryType.ANVIL 
-                 || top == InventoryType.ENCHANTING;
+        boolean isAllowed = top == InventoryType.CRAFTING 
+                || top == InventoryType.ANVIL 
+                || top == InventoryType.ENCHANTING;
                  
-         if (!isAllowed) {
-             if (event.getClickedInventory() == event.getView().getTopInventory() || event.isShiftClick()) {
-                 event.setCancelled(true);
-                 player.sendMessage(configManager.getPrefixedMessage("mace.cannot-move"));
-             }
-         }
+        if (!isAllowed) {
+            if (event.getClickedInventory() == event.getView().getTopInventory() || event.isShiftClick()) {
+                event.setCancelled(true);
+                player.sendMessage(configManager.getPrefixedMessage("mace.cannot-move"));
+            }
+        }
     }
 }
