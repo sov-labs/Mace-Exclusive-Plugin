@@ -92,4 +92,8 @@ public class ConfigManager {
     public boolean isStrictMode() {
         return plugin.getConfig().getBoolean("settings.strict-mode", false);
     }
+    
+    public boolean isVerboseLogging() {
+        return plugin.getConfig().getBoolean("settings.verbose", false);
+    }
 }

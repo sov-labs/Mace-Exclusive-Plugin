@@ -11,8 +11,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
@@ -76,6 +78,38 @@ public class MaceListener implements Listener {
         
         if (!maceManager.canCraftMace()) {
             event.getInventory().setResult(null);
+        }
+    }
+
+    /**
+     * Block CRAFTER BLOCK (1.21+) from crafting Mace.
+     * This prevents automation bypass using the new Crafter block.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onCrafterCraft(CrafterCraftEvent event) {
+        ItemStack result = event.getResult();
+        if (result == null || result.getType() != Material.MACE) return;
+        
+        // Always block Crafter from making Mace (no permission check - automation not allowed)
+        event.setCancelled(true);
+        
+        if (configManager.isVerboseLogging()) {
+            plugin.getLogger().info("Blocked Crafter from crafting Mace at " + event.getBlock().getLocation());
+        }
+    }
+
+    /**
+     * Block hoppers and other inventory movers from moving Mace around.
+     * This prevents duplication exploits with automation.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onInventoryMoveItem(InventoryMoveItemEvent event) {
+        ItemStack item = event.getItem();
+        if (item.getType() != Material.MACE) return;
+        
+        // Block any automated movement of Mace (hoppers, droppers, etc.)
+        if (maceManager.isRegisteredMace(item)) {
+            event.setCancelled(true);
         }
     }
 
