@@ -1,24 +1,13 @@
 # Changelog
 
-## [1.0] - 2026-02-02
-### Added
-- Strict Mode implementation:
-    - Blocks placing Mace in storage containers (Chests, Shulkers, etc.).
-    - Prevents dropping Mace if strict mode is enabled.
-    - Allows using Mace in Anvil and Enchanting Tables.
-- Configuration for Strict Mode (`strict-mode`).
-- **Effect Mace** features:
-    - Glowing effect on first craft (5m).
-    - Passive visual effects (Glowing, Soul Particles) when holding mace.
-    - Ground Slam effect on combat hit.
-    - Custom Kill Message.
-- **Mace Chaos** implementation:
-    - New "Mace of Chaos" item with corrupted lore.
-    - Hard recipe (Heavy Core, Netherite, Wither Rose).
-    - **Self-Curse**: Wither & Inventory Shuffle on craft/pickup.
-    - **Combat**: 20% chance to shuffle victim inventory.
-    - Glitch Kill Message.
+All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2026-02-03
 ### Fixed
-- Fixed **Custom Recipe** conflicting with Vanilla recipe (Vanilla recipe key removed).
-- Fixed **Shift-Click Mass Crafting** exploit (Shift-click crafting disabled for Mace).
+- Fixed critical startup issue where plugin failed to load due to YAML syntax error in `plugin.yml`.
+- Added robust error handling in `onEnable` to catch and log startup crashes.
+- Fixed `ConfigManager` not loading languages properly on initial startup.
+
+### Changed
+- Removed duplicate config loading in `ConfigManager`.
+- Improved error messages for missing 'macee' command.
