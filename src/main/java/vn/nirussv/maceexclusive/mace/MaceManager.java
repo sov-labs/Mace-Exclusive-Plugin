@@ -81,8 +81,6 @@ public class MaceManager {
     }
 
     public void onPlayerBecameHolder(Player player, Location location, MaceType type) {
-        repository.setHolder(type, player.getUniqueId());
-        
         player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 200, 0, false, false, true));
         player.playSound(location, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 0.5f);
         
@@ -91,8 +89,10 @@ public class MaceManager {
     }
 
     private void broadcastOwnership(Player player, Location location, MaceType type) {
+        String playerDisplay = type == MaceType.CHAOS ? "§k" + player.getName() + "§r" : player.getName();
+        
         Map<String, String> placeholders = Map.of(
-            "player", player.getName(),
+            "player", playerDisplay,
             "x", String.valueOf(location.getBlockX()),
             "y", String.valueOf(location.getBlockY()),
             "z", String.valueOf(location.getBlockZ()),

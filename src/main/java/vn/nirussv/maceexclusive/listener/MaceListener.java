@@ -118,7 +118,7 @@ public class MaceListener implements Listener {
         if (result.getType() != Material.MACE) return;
 
         MaceType type = maceFactory.getMaceType(result);
-        if (type == null) return;
+        if (type == null || type == MaceType.CHAOS) return;
 
         if (event.isShiftClick()) {
             event.setCancelled(true);
