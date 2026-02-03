@@ -44,11 +44,6 @@ A corrupted variant with chaotic properties:
 *   **Combat Effects**:
     *   **Unknown Power**: 20% chance to shuffle victim's inventory for 5s.
     *   **Glitch Kill**: Death message hides killer's name with glitches (e.g. "User was OBLITERATED by §kERROR").
-
-### 📜 Customization
-*   **Custom Stats**: Configurable name, lore, and Custom Model Data for both Maces.
-*   **Recipes**: Fully configurable shapes and ingredients.
-*   **Effects**: Toggle individual effects in `config.yml`.
 ---
 
 ## Infrastructure & Project Structure
