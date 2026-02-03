@@ -13,8 +13,10 @@ import vn.nirussv.maceexclusive.mace.MaceFactory;
 import vn.nirussv.maceexclusive.mace.MaceManager;
 import vn.nirussv.maceexclusive.mace.MaceRepository;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.bukkit.inventory.Recipe;
 
 public class MaceExclusivePlugin extends JavaPlugin {
 
@@ -42,6 +44,7 @@ public class MaceExclusivePlugin extends JavaPlugin {
         
         new vn.nirussv.maceexclusive.task.MaceEffectTask(this, maceManager).runTaskTimer(this, 10L, 5L);
         
+        removeVanillaRecipe();
         registerRecipe();
         
         getLogger().info("Mace-Exclusive has been enabled! Version: " + getDescription().getVersion());
@@ -51,6 +54,21 @@ public class MaceExclusivePlugin extends JavaPlugin {
     public void onDisable() {
         if (maceRepository != null) {
             maceRepository.save();
+        }
+    }
+
+    private void removeVanillaRecipe() {
+        Iterator<Recipe> it = getServer().recipeIterator();
+        while (it.hasNext()) {
+            Recipe r = it.next();
+            if (r.getResult().getType() == Material.MACE) {
+                if (r instanceof ShapedRecipe sr) {
+                    if (sr.getKey().getNamespace().equals("minecraft")) {
+                        it.remove();
+                        getLogger().info("Removed vanilla Mace recipe.");
+                    }
+                }
+            }
         }
     }
 
@@ -79,11 +97,15 @@ public class MaceExclusivePlugin extends JavaPlugin {
                     if (mat != null) {
                         recipe.setIngredient(key.charAt(0), mat);
                     } else {
+                        getLogger().warning("Invalid ingredient material definition: " + key + " -> " + matName);
                         getLogger().warning("Invalid ingredient material: " + matName);
                     }
                 }
             }
         }
+        
+        // Debug
+        getLogger().info("Registered custom Mace recipe with key: " + requestKey);
 
         getServer().addRecipe(recipe);
         

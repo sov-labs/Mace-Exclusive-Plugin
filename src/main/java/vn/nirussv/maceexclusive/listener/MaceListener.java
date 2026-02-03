@@ -84,13 +84,28 @@ public class MaceListener implements Listener {
         ItemStack result = event.getRecipe().getResult();
         if (result.getType() != Material.MACE) return;
 
-        if (!maceManager.canCraftMace()) {
-            event.setCancelled(true);
-            if (event.getWhoClicked() instanceof Player player) {
-                player.sendMessage(configManager.getPrefixedMessage("mace.already-exists", 
-                    Map.of("player", maceManager.getCurrentHolderName())));
+        if (maceManager.isRegisteredMace(result) || result.getType() == Material.MACE) {
+            // Prevent Shift-Click (Mass Crafting / Glitch Prevention)
+            if (event.isShiftClick()) {
+                event.setCancelled(true);
+                if (event.getWhoClicked() instanceof Player player) {
+                    player.sendMessage(configManager.getPrefixedMessage("mace.cannot-shift-click", java.util.Map.of())); 
+                    // Fallback message if key missing
+                    if (configManager.getRawMessage("mace.cannot-shift-click").startsWith("Missing")) {
+                        player.sendMessage("§c[Mace-Exclusive] §cShift-Click crafting is disabled for this item!");
+                    }
+                }
+                return;
             }
-            return;
+        
+            if (!maceManager.canCraftMace()) {
+                event.setCancelled(true);
+                if (event.getWhoClicked() instanceof Player player) {
+                    player.sendMessage(configManager.getPrefixedMessage("mace.already-exists", 
+                        Map.of("player", maceManager.getCurrentHolderName())));
+                }
+                return;
+            }
         }
 
         if (event.getWhoClicked() instanceof Player player) {
